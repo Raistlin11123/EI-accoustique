@@ -24,7 +24,7 @@ def compute_J_prim(alpha, u, p) :
 def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
-    #omega/wavelenght attention
+    #omega!=wavelenght attention
     """This function return the optimized density.
 
     Parameter:
