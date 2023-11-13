@@ -112,7 +112,7 @@ def _plot_error(err):
 
 def _plot_energy_history(energy):
 
-    matplotlib.pyplot.plot(energy) #, cmap = 'jet')#, vmin = 1e-4, vmax = 1e-0)
+    matplotlib.pyplot.scatter(numpy.arange(energy.shape[0]),energy) #, cmap = 'jet')#, vmin = 1e-4, vmax = 1e-0)
     matplotlib.pyplot.title('Energy')
     #matplotlib.pyplot.colorbar()
     #matplotlib.pyplot.show()
