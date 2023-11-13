@@ -94,9 +94,9 @@ if __name__ == '__main__':
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
     # -- set parameters of the geometry
-    N = 50  # number of points along x-axis
+    N = 100  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
-    level = 0 # level of the fractal
+    level = 3 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
@@ -116,6 +116,7 @@ if __name__ == '__main__':
 
     # -- set geometry of domain
     domain_omega, x, y, _, _ = preprocessing._set_geometry_of_domain(M, N, level)
+    #print("domain_omega",domain_omega)
 
     # ----------------------------------------------------------------------
     # -- Fell free to modify the function call in this cell.
@@ -163,6 +164,8 @@ if __name__ == '__main__':
     chi0 = chi.copy()
     u0 = u.copy()
 
+    print("shape chi0:",chi0.shape)
+    print("shape u0:",np.real(u0[0:N]))
     # ----------------------------------------------------------------------
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
@@ -176,6 +179,9 @@ if __name__ == '__main__':
 
     chin = chi.copy()
     un = u.copy()
+
+    print("shape chin:",chin.shape)
+    print("shape ub:",un.shape)
 
     # -- plot chi, u, and energy
     postprocessing._plot_uncontroled_solution(u0, chi0)
