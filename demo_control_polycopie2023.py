@@ -2,8 +2,8 @@
 
 
 # Python packages
-import matplotlib.pyplot
-import numpy
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 
 
@@ -28,9 +28,9 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
     """
 
     k = 0
-    (M, N) = numpy.shape(domain_omega)
+    (M, N) = np.shape(domain_omega)
     numb_iter = 100
-    energy = numpy.zeros((numb_iter+1, 1), dtype=numpy.float64)
+    energy = np.zeros((numb_iter+1, 1), dtype=np.float64)
     while k < numb_iter and mu > 10**(-5):
         print('---- iteration number = ', k)
         print('1. computing solution of Helmholtz problem, i.e., u')
@@ -74,6 +74,15 @@ def your_compute_objective_function(domain_omega, u, spacestep):
 
     return energy
 
+def compute_gradient_descent(p_k,q_k,chi_k,J_k,Jp_k,mu,eps):
+    l = 0 
+    #chi_k1 = 
+        
+    pass
+
+def P_l(chi):
+    max
+
 
 if __name__ == '__main__':
 
@@ -89,7 +98,7 @@ if __name__ == '__main__':
     # -- set parameters of the partial differential equation
     kx = -1.0
     ky = -1.0
-    wavenumber = numpy.sqrt(kx**2 + ky**2)  # wavenumber
+    wavenumber = np.sqrt(kx**2 + ky**2)  # wavenumber
     wavenumber = 10.0
 
     # ----------------------------------------------------------------------
@@ -137,7 +146,7 @@ if __name__ == '__main__':
                 S += 1
 
     V_0 = 1  # initial volume of the domain
-    V_obj = numpy.sum(numpy.sum(chi)) / S  # constraint on the density
+    V_obj = np.sum(np.sum(chi)) / S  # constraint on the density
     mu = 5  # initial gradient step
     mu1 = 10**(-5)  # parameter of the volume functional
 
@@ -154,7 +163,7 @@ if __name__ == '__main__':
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
     # -- compute optimization
-    energy = numpy.zeros((100+1, 1), dtype=numpy.float64)
+    energy = np.zeros((100+1, 1), dtype=np.float64)
     # chi, energy, u, grad = your_optimization_procedure(...)
     #chi, energy, u, grad = solutions.optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
     #                    beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
