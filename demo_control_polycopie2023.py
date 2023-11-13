@@ -27,6 +27,7 @@ def adj_member(u) :
 def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
+    #omega/wavelenght attention
     """This function return the optimized density.
 
     Parameter:
@@ -107,7 +108,7 @@ if __name__ == '__main__':
     kx = -1.0
     ky = -1.0
     wavenumber = numpy.sqrt(kx**2 + ky**2)  # wavenumber
-    wavenumber = 10.0
+    # wavenumber = 10.0
 
     # ----------------------------------------------------------------------
     # -- Do not modify this cell, these are the values that you will be assessed against.
@@ -140,10 +141,11 @@ if __name__ == '__main__':
     chi = preprocessing.set2zero(chi, domain_omega)
 
     # -- define absorbing material
-    Alpha = 10.0 - 10.0 * 1j
+    # Alpha = 10.0 - 10.0 * 1j
     # -- this is the function you have written during your project
-    #import compute_alpha
-    #Alpha = compute_alpha.compute_alpha(...)
+    import compute_alpha
+    # Alpha = compute_alpha.solve_alpha(...)
+    Alpha=1+1j
     alpha_rob = Alpha * chi
 
     # -- set parameters for optimization
@@ -171,7 +173,7 @@ if __name__ == '__main__':
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
     # -- compute optimization
-    energy = numpy.zeros((100+1, 1), dtype=numpy.float64)
+    # energy = numpy.zeros((100+1, 1), dtype=numpy.float64)
     chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj)
