@@ -2,8 +2,8 @@
 
 
 # Python packages
-import matplotlib.pyplot
-import numpy
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 
 
@@ -15,11 +15,11 @@ import postprocessing
 #import solutions
 
 def compute_J_prim(alpha, u, p) :
-    M,N=numpy.shape(u)
-    res=numpy.zeros((M,N))
+    M,N=np.shape(u)
+    res=np.zeros((M,N))
     for i in range(M) :
         for j in range(N) :
-            res[i,j]=numpy.real(-alpha[i,j]*u[i,j]*p[i,j])
+            res[i,j]=np.real(-alpha[i,j]*u[i,j]*p[i,j])
 
 def adj_member(u) :
     return
@@ -38,14 +38,14 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
     """
 
     k = 0
-    (M, N) = numpy.shape(domain_omega)
+    (M, N) = np.shape(domain_omega)
     numb_iter = 100
-    energy = numpy.zeros((numb_iter+1, 1), dtype=numpy.float64)
+    energy = np.zeros((numb_iter+1, 1), dtype=np.float64)
     while k < numb_iter and mu > 10**(-5):
         print('1. computing solution of Helmholtz problem, i.e., u')
         u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         print('2. computing solution of adjoint problem, i.e., p')
-        p=processing.solve_helmholtz(domain_omega, spacestep, omega, numpy.conjugate(-2*u), numpy.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        p=processing.solve_helmholtz(domain_omega, spacestep, omega, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(domain_omega, u, spacestep)
         J_prim=compute_J_prim(alpha_rob, u, p)
@@ -84,7 +84,7 @@ def your_compute_objective_function(domain_omega, u, spacestep):
         equation.
     """
 
-    (M,N) = numpy.shape(u)
+    (M,N) = np.shape(u)
     energy = 0
     for i in range(M) :
         for j in range(N) :
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     # -- set parameters of the partial differential equation
     kx = -1.0
     ky = -1.0
-    wavenumber = numpy.sqrt(kx**2 + ky**2)  # wavenumber
+    wavenumber = np.sqrt(kx**2 + ky**2)  # wavenumber
     # wavenumber = 10.0
 
     # ----------------------------------------------------------------------
@@ -157,7 +157,7 @@ if __name__ == '__main__':
                 S += 1
 
     V_0 = 1  # initial volume of the domain
-    V_obj = numpy.sum(numpy.sum(chi)) / S  # constraint on the density
+    V_obj = np.sum(np.sum(chi)) / S  # constraint on the density
     mu = 5  # initial gradient step
     mu1 = 10**(-5)  # parameter of the volume functional
 
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
     # -- compute optimization
-    # energy = numpy.zeros((100+1, 1), dtype=numpy.float64)
+    # energy = np.zeros((100+1, 1), dtype=np.float64)
     chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj)
