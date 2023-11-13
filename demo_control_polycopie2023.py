@@ -20,6 +20,7 @@ def compute_J_prim(alpha, u, p) :
     for i in range(M) :
         for j in range(N) :
             res[i,j]=np.real(-alpha[i,j]*u[i,j]*p[i,j])
+    return res
 
 
 def BelongsInteriorDomain(node):
@@ -40,19 +41,19 @@ def compute_gradient_descent(chi, grad, domain, mu):
     :param grad: parametric gradient associated to the problem
     :param domain: domain of definition of the equations
     :param mu: step of the descent
-    :type chi: numpy.array((M,N), dtype=float64
-    :type grad: numpy.array((M,N), dtype=float64)
-    :type domain: numpy.array((M,N), dtype=int64)
+    :type chi: np.array((M,N), dtype=float64
+    :type grad: np.array((M,N), dtype=float64)
+    :type domain: np.array((M,N), dtype=int64)
     :type mu: float
     :return chi:
-    :rtype chi: numpy.array((M,N), dtype=float64
+    :rtype chi: np.array((M,N), dtype=float64
 
     .. warnings also: It is important that the conditions be expressed with an "if",
             not with an "elif", as some points are neighbours to multiple points
             of the Robin frontier.
     """
 
-    (M, N) = numpy.shape(domain)
+    (M, N) = np.shape(domain)
     # for i in range(0, M):
     # 	for j in range(0, N):
     # 		if domain_omega[i, j] != _env.NODE_ROBIN:
@@ -73,6 +74,7 @@ def compute_gradient_descent(chi, grad, domain, mu):
             d = BelongsInteriorDomain(domain[i, j - 1])
             if a == 2:
                 print(i+1,j, "-----", "i+1,j")
+
                 chi[i + 1, j] = chi[i + 1, j] - mu * grad[i, j]
             if b == 2:
                 print(i - 1, j, "-----", "i - 1, j")
@@ -97,14 +99,14 @@ def compute_projected(chi, domain, V_obj):
     :param chi: density matrix
     :param domain: domain of definition of the equations
     :param V_obj: characterizes the volume constraint
-    :type chi: numpy.array((M,N), dtype=float64)
-    :type domain: numpy.array((M,N), dtype=complex128)
+    :type chi: np.array((M,N), dtype=float64)
+    :type domain: np.array((M,N), dtype=complex128)
     :type float: float
     :return:
     :rtype:
     """
 
-    (M, N) = numpy.shape(domain)
+    (M, N) = np.shape(domain)
     S = 0
     for i in range(M):
         for j in range(N):
@@ -113,11 +115,11 @@ def compute_projected(chi, domain, V_obj):
 
     B = chi.copy()
     l = 0
-    chi = set2zero(chi, domain)
+    chi = processing.set2zero(chi, domain)
 
-    V = numpy.sum(numpy.sum(chi)) / S
-    debut = -numpy.max(chi)
-    fin = numpy.max(chi)
+    V = np.sum(np.sum(chi)) / S
+    debut = -np.max(chi)
+    fin = np.max(chi)
     ecart = fin - debut
     # We use dichotomy to find a constant such that chi^{n+1}=max(0,min(chi^{n}+l,1)) is an element of the admissible space
     while ecart > 10 ** -4:
@@ -125,8 +127,8 @@ def compute_projected(chi, domain, V_obj):
         l = (debut + fin) / 2
         for i in range(M):
             for j in range(N):
-                chi[i, j] = numpy.maximum(0, numpy.minimum(B[i, j] + l, 1))
-        chi = set2zero(chi, domain)
+                chi[i, j] = np.maximum(0, np.minimum(B[i, j] + l, 1))
+        chi = processing.set2zero(chi, domain)
         V = sum(sum(chi)) / S
         if V > V_obj:
             fin = l
@@ -153,9 +155,9 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
     """
 
     k = 0
-    (M, N) = numpy.shape(domain_omega)
-    numb_iter = 100
-    energy = numpy.zeros((numb_iter+1, 1), dtype=numpy.float64)
+    (M, N) = np.shape(domain_omega)
+    numb_iter = 5
+    energy = np.zeros((numb_iter+1, 1), dtype=np.float64)
     while k < numb_iter and mu > 10**(-5):
         print('1. computing solution of Helmholtz problem, i.e., u')
         u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
@@ -164,15 +166,16 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u)
         energy[k]=J
-        J_prim=compute_J_prim(alpha_rob, u, p)
+        Jprim=compute_J_prim(alpha_rob, u, p)
         print('4. computing parametric gradient')
         ene=J
         while ene >= energy[k] and mu > 10 ** -5:
+            grad = Jprim
             print('    a. computing gradient descent')
-            chi = compute_gradient_descent(chi, grad, domain, mu) #chi_k+1 sans projection (l=0)
+            chi = compute_gradient_descent(chi, grad, domain_omega, mu) #chi_k+1 sans projection (l=0)
 
             print('    b. computing projected gradient')
-            chi = compute_projected(chi, domain, V_obj)
+            chi = compute_projected(chi, domain_omega, V_obj)
             
             print('    c. computing solution of Helmholtz problem, i.e., u')
             u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
@@ -226,7 +229,7 @@ if __name__ == '__main__':
     # -- set parameters of the geometry
     N = 100  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
-    level = 3 # level of the fractal
+    level = 0 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
