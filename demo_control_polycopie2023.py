@@ -15,11 +15,14 @@ import postprocessing
 #import solutions
 
 def compute_J_prim(alpha, u, p) :
-    M,N=u.shape()
+    M,N=numpy.shape(u)
     res=numpy.zeros((M,N))
     for i in range(M) :
         for j in range(N) :
-            res[i,j]=(-alpha*u[i,j]*p[i,j]).real()
+            res[i,j]=numpy.real(-alpha[i,j]*u[i,j]*p[i,j])
+
+def adj_member(u) :
+    return
 
 def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
@@ -41,7 +44,7 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         print('1. computing solution of Helmholtz problem, i.e., u')
         u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         print('2. computing solution of adjoint problem, i.e., p')
-        p=processing.solve_helmholtz(domain_omega, spacestep, omega, -2*u.conjugate(), numpy.zeros(domain_omega.shape()), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        p=processing.solve_helmholtz(domain_omega, spacestep, omega, numpy.conjugate(-2*u), numpy.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(domain_omega, u, spacestep)
         J_prim=compute_J_prim(alpha_rob, u, p)
@@ -52,6 +55,7 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
             print('    c. computing solution of Helmholtz problem, i.e., u')
             print('    d. computing objective function, i.e., energy (E)')
             ene = your_compute_objective_function(domain_omega, u, spacestep)
+            bool_a=True
             if bool_a:
                 # The step is increased if the energy decreased
                 mu = mu * 1.1
@@ -79,7 +83,7 @@ def your_compute_objective_function(domain_omega, u, spacestep):
         equation.
     """
 
-    M,N = u.shape()
+    (M,N) = numpy.shape(u)
     energy = 0
     for i in range(M) :
         for j in range(N) :
@@ -168,10 +172,9 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------
     # -- compute optimization
     energy = numpy.zeros((100+1, 1), dtype=numpy.float64)
-    # chi, energy, u, grad = your_optimization_procedure(...)
-    #chi, energy, u, grad = solutions.optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
-    #                    beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
-    #                    Alpha, mu, chi, V_obj, mu1, V_0)
+    chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
+                           beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
+                           Alpha, mu, chi, V_obj)
     # --- en of optimization
 
     chin = chi.copy()
@@ -183,5 +186,7 @@ if __name__ == '__main__':
     err = un - u0
     postprocessing._plot_error(err)
     postprocessing._plot_energy_history(energy)
+
+    matplotlib.pyplot.show()
 
     print('End.')
