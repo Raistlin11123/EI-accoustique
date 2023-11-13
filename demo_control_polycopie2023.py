@@ -81,7 +81,7 @@ def compute_gradient_descent(p_k,q_k,chi_k,J_k,Jp_k,mu,eps):
     pass
 
 def P_l(chi):
-    max
+    np.maximum(np.zeros_like(chi),np.minimum)
 
 
 if __name__ == '__main__':
