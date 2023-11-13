@@ -14,6 +14,12 @@ import processing
 import postprocessing
 #import solutions
 
+def compute_J_prim(alpha, u, p) :
+    M,N=u.shape()
+    res=numpy.zeros((M,N))
+    for i in range(M) :
+        for j in range(N) :
+            res[i,j]=(-alpha*u[i,j]*p[i,j]).real()
 
 def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
@@ -32,17 +38,20 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
     numb_iter = 100
     energy = numpy.zeros((numb_iter+1, 1), dtype=numpy.float64)
     while k < numb_iter and mu > 10**(-5):
-        print('---- iteration number = ', k)
         print('1. computing solution of Helmholtz problem, i.e., u')
+        u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         print('2. computing solution of adjoint problem, i.e., p')
+        p=processing.solve_helmholtz(domain_omega, spacestep, omega, -2*u.conjugate(), numpy.zeros(domain_omega.shape()), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         print('3. computing objective function, i.e., energy')
+        J=your_compute_objective_function(domain_omega, u, spacestep)
+        J_prim=compute_J_prim(alpha_rob, u, p)
         print('4. computing parametric gradient')
         while ene >= energy[k] and mu > 10 ** -5:
             print('    a. computing gradient descent')
             print('    b. computing projected gradient')
             print('    c. computing solution of Helmholtz problem, i.e., u')
             print('    d. computing objective function, i.e., energy (E)')
-            ene = compute_objective_function(domain_omega, u, spacestep)
+            ene = your_compute_objective_function(domain_omega, u, spacestep)
             if bool_a:
                 # The step is increased if the energy decreased
                 mu = mu * 1.1
@@ -70,7 +79,11 @@ def your_compute_objective_function(domain_omega, u, spacestep):
         equation.
     """
 
-    energy = 0.0
+    M,N = u.shape()
+    energy = 0
+    for i in range(M) :
+        for j in range(N) :
+            energy+=u[i,j]**2
 
     return energy
 
