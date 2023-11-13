@@ -21,9 +21,6 @@ def compute_J_prim(alpha, u, p) :
         for j in range(N) :
             res[i,j]=np.real(-alpha[i,j]*u[i,j]*p[i,j])
 
-def adj_member(u) :
-    return
-
 def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
@@ -39,7 +36,7 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
 
     k = 0
     (M, N) = np.shape(domain_omega)
-    numb_iter = 100
+    numb_iter = 2
     energy = np.zeros((numb_iter+1, 1), dtype=np.float64)
     while k < numb_iter and mu > 10**(-5):
         print('1. computing solution of Helmholtz problem, i.e., u')
@@ -47,15 +44,17 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         print('2. computing solution of adjoint problem, i.e., p')
         p=processing.solve_helmholtz(domain_omega, spacestep, omega, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         print('3. computing objective function, i.e., energy')
-        J=your_compute_objective_function(domain_omega, u, spacestep)
+        J=your_compute_objective_function(u)
+        energy[k]=J
         J_prim=compute_J_prim(alpha_rob, u, p)
         print('4. computing parametric gradient')
+        ene=J
         while ene >= energy[k] and mu > 10 ** -5:
             print('    a. computing gradient descent')
             print('    b. computing projected gradient')
             print('    c. computing solution of Helmholtz problem, i.e., u')
             print('    d. computing objective function, i.e., energy (E)')
-            ene = your_compute_objective_function(domain_omega, u, spacestep)
+            ene = your_compute_objective_function(u)-1
             bool_a=True
             if bool_a:
                 # The step is increased if the energy decreased
@@ -66,11 +65,12 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         k += 1
 
     print('end. computing solution of Helmholtz problem, i.e., u')
+    grad=0
 
     return chi, energy, u, grad
 
 
-def your_compute_objective_function(domain_omega, u, spacestep):
+def your_compute_objective_function(u):
     """
     This function compute the objective function:
     J(u,domain_omega)= \int_{domain_omega}||u||^2 
@@ -88,7 +88,7 @@ def your_compute_objective_function(domain_omega, u, spacestep):
     energy = 0
     for i in range(M) :
         for j in range(N) :
-            energy+=u[i,j]**2
+            energy+=abs(u[i,j])**2
 
     return energy
 
@@ -130,6 +130,9 @@ if __name__ == '__main__':
     # planar wave defined on top
     f_dir[:, :] = 0.0
     f_dir[0, 0:N] = 1.0
+    '''
+    faut que ce soit égal à g sur Gamma_dir
+    '''
     # spherical wave defined on top
     #f_dir[:, :] = 0.0
     #f_dir[0, int(N/2)] = 10.0
@@ -146,6 +149,9 @@ if __name__ == '__main__':
     # -- this is the function you have written during your project
     import compute_alpha
     # Alpha = compute_alpha.solve_alpha(...)
+    '''
+    à modifier également
+    '''
     Alpha=1+1j
     alpha_rob = Alpha * chi
 
@@ -194,7 +200,5 @@ if __name__ == '__main__':
     err = un - u0
     postprocessing._plot_error(err)
     postprocessing._plot_energy_history(energy)
-
-    matplotlib.pyplot.show()
 
     print('End.')
