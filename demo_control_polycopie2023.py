@@ -149,7 +149,8 @@ def compute_projected(chi, domain, V_obj):
 def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
-    #omega/wavelenght attention
+    #omega!=wavelenght attention
+    #bizarre qu'on se serve pas de Alpha, V_obj
     """This function return the optimized density.
 
     Parameter:
@@ -234,7 +235,9 @@ if __name__ == '__main__':
     kx = -1.0
     ky = -1.0
     wavenumber = np.sqrt(kx**2 + ky**2)  # wavenumber
-    # wavenumber = 10.0
+    omega=10000
+    
+    g = lambda y,omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
 
     # ----------------------------------------------------------------------
     # -- Do not modify this cell, these are the values that you will be assessed against.
@@ -255,7 +258,7 @@ if __name__ == '__main__':
     # -- define boundary conditions
     # planar wave defined on top
     f_dir[:, :] = 0.0
-    f_dir[0, 0:N] = 1.0
+    f_dir[0, 0:N] = g(0, omega)
     '''
     faut que ce soit égal à g sur Gamma_dir
     '''
@@ -264,7 +267,7 @@ if __name__ == '__main__':
     #f_dir[0, int(N/2)] = 10.0
 
     # -- initialize
-    alpha_rob[:, :] = - wavenumber * 1j
+    # alpha_rob[:, :] = - wavenumber * 1j
 
     # -- define material density matrix
     chi = preprocessing._set_chi(M, N, x, y)
@@ -274,11 +277,7 @@ if __name__ == '__main__':
     # Alpha = 10.0 - 10.0 * 1j
     # -- this is the function you have written during your project
     import compute_alpha
-    # Alpha = compute_alpha.solve_alpha(...)
-    '''
-    à modifier également
-    '''
-    Alpha=1+1j
+    Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
     alpha_rob = Alpha * chi
 
     # -- set parameters for optimization
