@@ -170,9 +170,9 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
             mu *= 2
         print(f"k={k}")
         #print('1. computing solution of Helmholtz problem, i.e., u')
-        u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('2. computing solution of adjoint problem, i.e., p')
-        p=processing.solve_helmholtz(domain_omega, spacestep, omega, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u)
         energy[k]=J
@@ -192,7 +192,7 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
             chi = compute_projected(chi, domain_omega, V_obj)
             alpha_rob = Alpha*chi
             #print('    c. computing solution of Helmholtz problem, i.e., u')
-            u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+            u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             
 
             #print('    d. computing objective function, i.e., energy (E)')
@@ -332,9 +332,9 @@ if __name__ == '__main__':
 
     # -- plot chi, u, and energy
     postprocessing._plot_uncontroled_solution(u0, chi0)
-    # postprocessing._plot_controled_solution(un, chin)
-    # err = un - u0
-    # postprocessing._plot_error(err)
-    # postprocessing._plot_energy_history(energy)
+    postprocessing._plot_controled_solution(un, chin)
+    err = un - u0
+    postprocessing._plot_error(err)
+    postprocessing._plot_energy_history(energy)
 
     print('End.')
