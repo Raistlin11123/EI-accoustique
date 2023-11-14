@@ -161,7 +161,7 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
     """
     k = 0
     (M, N) = np.shape(domain_omega)
-    numb_iter = 200
+    numb_iter = 100
     energy = np.zeros((numb_iter, 1), dtype=np.float64)
     is_good = True
     while k < numb_iter:
@@ -174,7 +174,7 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
         #print('2. computing solution of adjoint problem, i.e., p')
         p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('3. computing objective function, i.e., energy')
-        J=your_compute_objective_function(u)
+        J=your_compute_objective_function(u,spacestep)
         energy[k]=J
         print("energie = ",J)
         Jprim=compute_J_prim(Alpha, u, p)
@@ -194,7 +194,7 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
             
 
             #print('    d. computing objective function, i.e., energy (E)')
-            ene = your_compute_objective_function(u)
+            ene = your_compute_objective_function(u,spacestep)
             bool_a=ene<J
             if bool_a:
                 # The step is increased if the energy decreased
@@ -216,7 +216,7 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
     return chi, energy, u, grad
 
 
-def your_compute_objective_function(u):
+def your_compute_objective_function(u,spacestep):
     """
     This function compute the objective function:
     J(u,domain_omega)= \int_{domain_omega}||u||^2 
@@ -229,12 +229,8 @@ def your_compute_objective_function(u):
         spacestep: float, it corresponds to the step used to solve the Helmholtz
         equation.
     """
-
-    (M,N) = np.shape(u)
-    energy = 0
-    for i in range(M) :
-        for j in range(N) :
-            energy+=abs(u[i,j])**2
+    #((re² + im² )step²)^1/2
+    energy = np.linalg.norm(u)*spacestep
 
     return energy
 
@@ -249,7 +245,7 @@ if __name__ == '__main__':
 
     N = 50  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
-    level = 1 # level of the fractal
+    level = 2 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
@@ -313,7 +309,7 @@ if __name__ == '__main__':
 
     V_0 = 1  # initial volume of the domain
     V_obj = np.sum(np.sum(chi)) / S  # constraint on the density
-    mu = 5  # initial gradient step
+    mu = 10 ** -2  # initial gradient step
     mu1 = 10**(-5)  # parameter of the volume functional
 
     # ----------------------------------------------------------------------
