@@ -122,8 +122,8 @@ def compute_projected(chi, domain, V_obj):
     chi = processing.set2zero(chi, domain)
 
     V = np.sum(np.sum(chi)) / S
-    debut = -np.max(np.abs(chi))
-    fin = np.max(np.abs(chi))
+    debut = -np.max(chi)
+    fin = np.max(chi)
     ecart = fin - debut
     # We use dichotomy to find a constant such that chi^{n+1}=max(0,min(chi^{n}+l,1)) is an element of the admissible space
     while ecart > 10 ** -4:
@@ -134,7 +134,7 @@ def compute_projected(chi, domain, V_obj):
             for j in range(N):
                 chi[i, j] = np.maximum(0, np.minimum(B[i, j] + l, 1))
         chi = processing.set2zero(chi, domain)
-        V = sum(sum(chi)) / S
+        V = np.sum(np.sum(chi)) / S
         if V > V_obj:
             fin = l
         else:
@@ -146,7 +146,7 @@ def compute_projected(chi, domain, V_obj):
 
 
 
-def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
+def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
     #omega!=wavelenght attention
@@ -161,17 +161,18 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
     """
     k = 0
     (M, N) = np.shape(domain_omega)
-    numb_iter = 5
+    numb_iter = 200
     energy = np.zeros((numb_iter, 1), dtype=np.float64)
     is_good = True
     while k < numb_iter:
+        print("mu entrée de boucle:", mu)
         if not is_good:
             mu *= 2
         print(f"k={k}")
         #print('1. computing solution of Helmholtz problem, i.e., u')
-        u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('2. computing solution of adjoint problem, i.e., p')
-        p=processing.solve_helmholtz(domain_omega, spacestep, omega, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u)
         energy[k]=J
@@ -179,8 +180,9 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         Jprim=compute_J_prim(Alpha, u, p)
         #print('4. computing parametric gradient')
         ene=J
+        grad = -Jprim
         while ene >= energy[k] and mu > 10 ** -5:
-            grad = Jprim
+            
             #print('    a. computing gradient descent')
             chi = compute_gradient_descent(chi, grad, domain_omega, mu) #chi_k+1 sans projection (l=0)
 
@@ -188,7 +190,7 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
             chi = compute_projected(chi, domain_omega, V_obj)
             alpha_rob = Alpha*chi
             #print('    c. computing solution of Helmholtz problem, i.e., u')
-            u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+            u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             
 
             #print('    d. computing objective function, i.e., energy (E)')
@@ -197,10 +199,14 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
             if bool_a:
                 # The step is increased if the energy decreased
                 mu = mu * 1.1
+                print("mu bonne éné:", mu)
+                print("éné:",ene)
                 is_good = True
             else:
                 # The step is decreased is the energy increased
                 mu = mu / 2
+                print("mu mauvaise éné:", mu)
+                print("éné:",ene)
                 is_good = False
                 
         k += 1
@@ -241,16 +247,16 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------
     # -- set parameters of the geometry
 
-    N = 100  # number of points along x-axis
+    N = 50  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
     level = 1 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
-    kx = -1.0
-    ky = -1.0
+    kx = 5*(-1.0)
+    ky = 5*(-1.0)
     wavenumber = np.sqrt(kx**2 + ky**2)  # wavenumber
-    omega= wavenumber
+    omega= 340*wavenumber
     
     #g = lambda y,omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
     g = lambda x, omega : np.exp(complex(0,1)*(kx*x+ky*0))
@@ -293,8 +299,8 @@ if __name__ == '__main__':
     # Alpha = 10.0 - 10.0 * 1j
     # -- this is the function you have written during your project
     import compute_alpha
-    #Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
-    Alpha = 4.259503502537576+0.17454478468463255j
+    Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
+    #Alpha = 4.259503502537576+0.17454478468463255j
     alpha_rob = Alpha * chi
     
 
