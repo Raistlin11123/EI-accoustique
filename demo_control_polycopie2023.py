@@ -248,6 +248,7 @@ if __name__ == '__main__':
     omega=10000
     
     g = lambda y,omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
+    '''à revoir cette forme car on se sert pas de kx, ky'''
 
     # ----------------------------------------------------------------------
     # -- Do not modify this cell, these are the values that you will be assessed against.
