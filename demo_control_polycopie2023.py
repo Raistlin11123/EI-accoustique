@@ -187,6 +187,7 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
 
             print('    b. computing projected gradient')
             chi = compute_projected(chi, domain_omega, V_obj)
+            alpha_rob=Alpha*chi
             
             print('    c. computing solution of Helmholtz problem, i.e., u')
             u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
@@ -246,7 +247,7 @@ if __name__ == '__main__':
     # -- set parameters of the geometry
     N = 100  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
-    level = 1 # level of the fractal
+    level = 0 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
@@ -254,8 +255,7 @@ if __name__ == '__main__':
     ky = -1.0
     wavenumber = np.sqrt(kx**2 + ky**2)
     omega = 340*wavenumber
-    g = lambda y, omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
-    '''à revoir cette forme car on se sert pas de kx, ky'''
+    g = lambda x, omega : np.exp(complex(0,1)*(kx*x+ky*0))
 
     # ----------------------------------------------------------------------
     # -- Do not modify this cell, these are the values that you will be assessed against.
@@ -317,19 +317,19 @@ if __name__ == '__main__':
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
     # -- compute optimization
-    chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
-                           beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
-                           Alpha, mu, chi, V_obj)
-    # --- en of optimization
-    chin = chi.copy()
-    un = u.copy()
+    # chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
+    #                        beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
+    #                        Alpha, mu, chi, V_obj)
+    # # --- en of optimization
+    # chin = chi.copy()
+    # un = u.copy()
 
 
     # -- plot chi, u, and energy
     postprocessing._plot_uncontroled_solution(u0, chi0)
-    postprocessing._plot_controled_solution(un, chin)
-    err = un - u0
-    postprocessing._plot_error(err)
-    postprocessing._plot_energy_history(energy)
+    # postprocessing._plot_controled_solution(un, chin)
+    # err = un - u0
+    # postprocessing._plot_error(err)
+    # postprocessing._plot_energy_history(energy)
 
     print('End.')
