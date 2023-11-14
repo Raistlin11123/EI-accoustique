@@ -284,11 +284,11 @@ if __name__ == '__main__':
     # Alpha = 10.0 - 10.0 * 1j
     # -- this is the function you have written during your project
     import compute_alpha
-    # Alpha = compute_alpha.solve_alpha(...)
+    Alpha = compute_alpha.solve_alpha(...)
     '''
     à modifier également
     '''
-    Alpha=1+1j
+    #Alpha=1+1j
     alpha_rob = Alpha * chi
 
     # -- set parameters for optimization
