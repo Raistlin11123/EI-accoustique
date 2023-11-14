@@ -19,7 +19,7 @@ def compute_J_prim(alpha, u, p) :
     res=np.zeros((M,N))
     for i in range(M) :
         for j in range(N) :
-            res[i,j]=np.real(-alpha[i,j]*u[i,j]*p[i,j])
+            res[i,j]=np.real(-alpha*u[i,j]*p[i,j])
     return res
 
 
@@ -76,15 +76,20 @@ def compute_gradient_descent(chi, grad, domain, mu):
                 print(i+1,j, "-----", "i+1,j")
 
                 chi[i + 1, j] = chi[i + 1, j] - mu * grad[i, j]
+                #print('chi1:',chi[i + 1, j])
             if b == 2:
                 print(i - 1, j, "-----", "i - 1, j")
                 chi[i - 1, j] = chi[i - 1, j] - mu * grad[i, j]
+                #print('chi2:',chi[i - 1, j])
             if c == 2:
                 print(i, j + 1, "-----", "i , j + 1")
                 chi[i, j + 1] = chi[i, j + 1] - mu * grad[i, j]
+                #print('chi3:',chi[i, j+1])
             if d == 2:
                 print(i, j - 1, "-----", "i , j - 1")
                 chi[i, j - 1] = chi[i, j - 1] - mu * grad[i,j]
+                #print('chi4:',chi[i, j-1])
+    print(chi[100])
     return chi
 
 
@@ -169,8 +174,7 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u)
         energy[k]=J
-        Jprim=compute_J_prim(alpha_rob, u, p)
-
+        Jprim=compute_J_prim(Alpha, u, p)
         print('4. computing parametric gradient')
         ene=J
         while ene >= energy[k] and mu > 10 ** -5:
@@ -223,6 +227,7 @@ def your_compute_objective_function(u):
             energy+=abs(u[i,j])**2
 
     return energy
+
 
 
 if __name__ == '__main__':
@@ -299,8 +304,6 @@ if __name__ == '__main__':
     chi0 = chi.copy()
     u0 = u.copy()
 
-    print("shape chi0:",chi0.shape)
-    print("shape u0:",np.real(u0[0:N]))
     # ----------------------------------------------------------------------
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
@@ -313,8 +316,6 @@ if __name__ == '__main__':
     chin = chi.copy()
     un = u.copy()
 
-    print("shape chin:",chin.shape)
-    print("shape ub:",un.shape)
 
     # -- plot chi, u, and energy
     postprocessing._plot_uncontroled_solution(u0, chi0)
