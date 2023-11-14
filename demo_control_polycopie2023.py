@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-
 # MRG packages
 import _env
 import preprocessing
 import processing
 import postprocessing
 #import solutions
+# np.set_printoptions(threshold=np.inf)
 
 def compute_J_prim(alpha, u, p) :
     #alpha complexe
@@ -113,11 +113,13 @@ def compute_projected(chi, domain, V_obj):
     """
 
     (M, N) = np.shape(domain)
+    list_rob=[]
     S = 0
     for i in range(M):
         for j in range(N):
             if domain[i, j] == _env.NODE_ROBIN:
                 S = S + 1
+                list_rob.append([(i,j),0])
 
     B = chi.copy()
     l = 0
@@ -145,8 +147,18 @@ def compute_projected(chi, domain, V_obj):
         #print("écart", ecart)
         #print('le volume est', V, 'le volume objectif est', V_obj)
 
+    chi=chi_zero_ou_un (M, N, chi, S, V_obj, list_rob)
+
     return chi
 
+def chi_zero_ou_un (M, N, chi, S, V_obj, list_rob) :
+    for el in list_rob :
+        el[1]=chi[el[0]]
+    list_rob=sorted(list_rob, key=lambda couple : couple[1], reverse=True)
+    chiprim = np.zeros((M,N))
+    for i in range(int(S*V_obj)) :
+        chiprim[list_rob[i][0]]=1
+    return chiprim
 
 
 def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
