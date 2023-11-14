@@ -255,14 +255,15 @@ if __name__ == '__main__':
 
     # -- set geometry of domain
     domain_omega, x, y, _, _ = preprocessing._set_geometry_of_domain(M, N, level)
-    
+
     # ----------------------------------------------------------------------
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
     # -- define boundary conditions
     # planar wave defined on top
     f_dir[:, :] = 0.0
-    f_dir[0, 0:N] = g(0, omega)
+    for j in range(N) :
+        f_dir[0, j] = g(spacestep*(j-N/2), omega)
 
     # spherical wave defined on top
     #f_dir[:, :] = 0.0
