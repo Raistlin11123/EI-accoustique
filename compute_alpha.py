@@ -264,3 +264,21 @@ N=50
 x_init=[0,0]
 
 # graph(g, Omega_list, xi0, eta0, xi1, eta1, L, a, A, B, N, x_init)
+
+
+def compute_alpha(L, omega, g) :
+    N_iter=20
+    x_init=[0,0]
+    # parameters
+    c0=340
+    A=1
+    B=1
+    xi0=1/(c0**2)
+    eta0=1
+    # matérial (mélanine)
+    phi=0.99
+    sigma=14000
+    alpha_h=1.02
+    gamma_p=7/5
+    xi1, eta1, a=param_material(phi, sigma, alpha_h, gamma_p, c0)
+    return solve_alpha(g, omega, xi0, eta0, xi1, eta1, L, a, A, B, N_iter, x_init)
