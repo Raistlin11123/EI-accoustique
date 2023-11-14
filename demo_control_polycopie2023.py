@@ -148,7 +148,7 @@ def compute_projected(chi, domain, V_obj):
 
 
 
-def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
+def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
     #omega!=wavelenght attention
@@ -167,10 +167,10 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
     while k < numb_iter and mu > 10**(-5):
 
         print('1. computing solution of Helmholtz problem, i.e., u')
-        u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
 
         print('2. computing solution of adjoint problem, i.e., p')
-        p=processing.solve_helmholtz(domain_omega, spacestep, omega, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
 
         print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u)
@@ -190,7 +190,7 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
             chi = compute_projected(chi, domain_omega, V_obj)
             
             print('    c. computing solution of Helmholtz problem, i.e., u')
-            u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+            u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             
             print('    d. computing objective function, i.e., energy (E)')
 
@@ -309,7 +309,7 @@ if __name__ == '__main__':
     # -- Do not modify this cell, these are the values that you will be assessed against.
     # ----------------------------------------------------------------------
     # -- compute finite difference solution
-    u = processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
+    u = processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                         beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
     chi0 = chi.copy()
     u0 = u.copy()
@@ -318,7 +318,7 @@ if __name__ == '__main__':
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
     # -- compute optimization
-    chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
+    chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj)
     # --- en of optimization
