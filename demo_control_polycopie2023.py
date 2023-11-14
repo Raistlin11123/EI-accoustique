@@ -151,7 +151,6 @@ def compute_projected(chi, domain, V_obj):
 def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
-    #omega!=wavelenght attention
     """This function return the optimized density.
 
     Parameter:
@@ -253,7 +252,7 @@ if __name__ == '__main__':
     # -- set parameters of the partial differential equation
     kx = -1.0
     ky = -1.0
-    wavenumber = np.sqrt(kx**2 + ky**2)  # omega
+    wavenumber = np.sqrt(kx**2 + ky**2)
     omega = 340*wavenumber
     g = lambda y, omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
     '''à revoir cette forme car on se sert pas de kx, ky'''
@@ -309,7 +308,7 @@ if __name__ == '__main__':
     # -- Do not modify this cell, these are the values that you will be assessed against.
     # ----------------------------------------------------------------------
     # -- compute finite difference solution
-    u = processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
+    u = processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                         beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
     chi0 = chi.copy()
     u0 = u.copy()
@@ -318,7 +317,7 @@ if __name__ == '__main__':
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
     # -- compute optimization
-    chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
+    chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj)
     # --- en of optimization
