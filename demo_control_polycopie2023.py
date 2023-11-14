@@ -91,7 +91,6 @@ def compute_gradient_descent(chi, grad, domain, mu):
                 #print(i, j - 1, "-----", "i , j - 1")
                 chi[i, j - 1] = chi[i, j - 1] - mu * grad[i,j]
                 #print('chi4:',chi[i, j-1])
-    print(chi[100])
     return chi
 
 
@@ -124,8 +123,8 @@ def compute_projected(chi, domain, V_obj):
     l = 0
     chi = processing.set2zero(chi, domain)
     V = np.sum(np.sum(chi)) / S
-    debut = -np.max(np.abs(chi))
-    fin = np.max(np.abs(chi))
+    debut = -np.max(chi)
+    fin = np.max(chi)
     ecart = fin - debut
     
     # We use dichotomy to find a constant such that chi^{n+1}=max(0,min(chi^{n}+l,1)) is an element of the admissible space
@@ -149,7 +148,7 @@ def compute_projected(chi, domain, V_obj):
 
 
 
-def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
+def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
     #omega!=wavelenght attention
@@ -163,15 +162,15 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
     """
     k = 0
     (M, N) = np.shape(domain_omega)
-    numb_iter = 5 
+    numb_iter = 5
     energy = np.zeros((numb_iter, 1), dtype=np.float64)
     while k < numb_iter and mu > 10**(-5):
 
         print('1. computing solution of Helmholtz problem, i.e., u')
-        u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
 
         print('2. computing solution of adjoint problem, i.e., p')
-        p=processing.solve_helmholtz(domain_omega, spacestep, omega, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
 
         print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u)
@@ -179,10 +178,11 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         Jprim=compute_J_prim(Alpha, u, p)
         print('4. computing parametric gradient')
         ene=J
+
+        print('-------------', k, '----------------')
         
         while ene >= energy[k] and mu > 10 ** -5:
             grad = Jprim
-
             print('    a. computing gradient descent')
             chi = compute_gradient_descent(chi, grad, domain_omega, mu) #chi_k+1 sans projection (l=0)
 
@@ -190,11 +190,13 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
             chi = compute_projected(chi, domain_omega, V_obj)
             
             print('    c. computing solution of Helmholtz problem, i.e., u')
-            u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+            u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             
             print('    d. computing objective function, i.e., energy (E)')
 
             ene = your_compute_objective_function(u)
+            print(ene, '/', J)
+            
             bool_a=ene<J
             if bool_a:
                 # The step is increased if the energy decreased
@@ -202,8 +204,9 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
             else:
                 # The step is decreased is the energy increased
                 mu = mu / 2
+            alpha_rob = Alpha*chi
 
-        alpha_rob = Alpha*chi
+        
         k += 1
 
     print('end. computing solution of Helmholtz problem, i.e., u')
@@ -250,10 +253,9 @@ if __name__ == '__main__':
     # -- set parameters of the partial differential equation
     kx = -1.0
     ky = -1.0
-    wavenumber = np.sqrt(kx**2 + ky**2)  # wavenumber
-    omega=10000
-    
-    g = lambda y,omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
+    wavenumber = np.sqrt(kx**2 + ky**2)  # omega
+    omega = 340*wavenumber
+    g = lambda y, omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
     '''à revoir cette forme car on se sert pas de kx, ky'''
 
     # ----------------------------------------------------------------------
