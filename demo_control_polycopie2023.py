@@ -6,17 +6,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-
 # MRG packages
 import _env
 import preprocessing
 import processing
 import postprocessing
 #import solutions
+# np.set_printoptions(threshold=np.inf)
 
 def compute_J_prim(alpha, u, p) :
+    #alpha complexe
     M,N=np.shape(u)
     res=np.zeros((M,N))
+
     for i in range(M) :
         for j in range(N) :
             res[i,j]=np.real(-alpha*u[i,j]*p[i,j])
@@ -111,20 +113,22 @@ def compute_projected(chi, domain, V_obj):
     """
 
     (M, N) = np.shape(domain)
+    list_rob=[]
     S = 0
     for i in range(M):
         for j in range(N):
             if domain[i, j] == _env.NODE_ROBIN:
                 S = S + 1
+                list_rob.append([(i,j),0])
 
     B = chi.copy()
     l = 0
     chi = processing.set2zero(chi, domain)
-
     V = np.sum(np.sum(chi)) / S
     debut = -np.max(chi)
     fin = np.max(chi)
     ecart = fin - debut
+    
     # We use dichotomy to find a constant such that chi^{n+1}=max(0,min(chi^{n}+l,1)) is an element of the admissible space
     while ecart > 10 ** -4:
         #print("l:",l)
@@ -140,17 +144,27 @@ def compute_projected(chi, domain, V_obj):
         else:
             debut = l
         ecart = fin - debut
-        # print('le volume est', V, 'le volume objectif est', V_obj)
+        #print("écart", ecart)
+        #print('le volume est', V, 'le volume objectif est', V_obj)
+
+    chi=chi_zero_ou_un (M, N, chi, S, V_obj, list_rob)
 
     return chi
 
+def chi_zero_ou_un (M, N, chi, S, V_obj, list_rob) :
+    for el in list_rob :
+        el[1]=chi[el[0]]
+    list_rob=sorted(list_rob, key=lambda couple : couple[1], reverse=True)
+    chiprim = np.zeros((M,N))
+    for i in range(int(S*V_obj)) :
+        chiprim[list_rob[i][0]]=1
+    return chiprim
 
 
 def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
+def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
-    #omega!=wavelenght attention
-    #bizarre qu'on se serve pas de Alpha, V_obj
     """This function return the optimized density.
 
     Parameter:
@@ -171,7 +185,9 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
         print(f"k={k}")
         #print('1. computing solution of Helmholtz problem, i.e., u')
         u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('2. computing solution of adjoint problem, i.e., p')
+        p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u,spacestep)
@@ -190,6 +206,7 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
             chi = compute_projected(chi, domain_omega, V_obj)
             alpha_rob = Alpha*chi
             #print('    c. computing solution of Helmholtz problem, i.e., u')
+            u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             
 
@@ -268,7 +285,6 @@ if __name__ == '__main__':
 
     # -- set geometry of domain
     domain_omega, x, y, _, _ = preprocessing._set_geometry_of_domain(M, N, level)
-    #print("domain_omega",domain_omega)
 
     # ----------------------------------------------------------------------
     # -- Fell free to modify the function call in this cell.
@@ -276,24 +292,19 @@ if __name__ == '__main__':
     # -- define boundary conditions
     # planar wave defined on top
     f_dir[:, :] = 0.0
-    f_dir[0, 0:N] = g(0, omega)
-    '''
-    faut que ce soit égal à g sur Gamma_dir
-    '''
+    for j in range(N) :
+        f_dir[0, j] = g(spacestep*(j-N/2), omega)
+
     # spherical wave defined on top
     #f_dir[:, :] = 0.0
     #f_dir[0, int(N/2)] = 10.0
 
-    # -- initialize
-    # alpha_rob[:, :] = - wavenumber * 1j
-
     # -- define material density matrix
     chi = preprocessing._set_chi(M, N, x, y)
     chi = preprocessing.set2zero(chi, domain_omega)
+    
 
     # -- define absorbing material
-    # Alpha = 10.0 - 10.0 * 1j
-    # -- this is the function you have written during your project
     import compute_alpha
     Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
     #Alpha = 4.259503502537576+0.17454478468463255j
