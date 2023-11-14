@@ -15,8 +15,10 @@ import postprocessing
 #import solutions
 
 def compute_J_prim(alpha, u, p) :
+    #alpha complexe
     M,N=np.shape(u)
     res=np.zeros((M,N))
+
     for i in range(M) :
         for j in range(N) :
             res[i,j]=np.real(-alpha*u[i,j]*p[i,j])
@@ -27,7 +29,7 @@ def BelongsInteriorDomain(node):
                 if (node < 0):
                     return 1
                 if node == 3:
-                    print("Robin")
+                    #print("Robin")
                     return 2
                 else:
                     return 0
@@ -73,20 +75,20 @@ def compute_gradient_descent(chi, grad, domain, mu):
             c = BelongsInteriorDomain(domain[i, j + 1])
             d = BelongsInteriorDomain(domain[i, j - 1])
             if a == 2:
-                print(i+1,j, "-----", "i+1,j")
+                #print(i+1,j, "-----", "i+1,j")
 
                 chi[i + 1, j] = chi[i + 1, j] - mu * grad[i, j]
                 #print('chi1:',chi[i + 1, j])
             if b == 2:
-                print(i - 1, j, "-----", "i - 1, j")
+                #print(i - 1, j, "-----", "i - 1, j")
                 chi[i - 1, j] = chi[i - 1, j] - mu * grad[i, j]
                 #print('chi2:',chi[i - 1, j])
             if c == 2:
-                print(i, j + 1, "-----", "i , j + 1")
+                #print(i, j + 1, "-----", "i , j + 1")
                 chi[i, j + 1] = chi[i, j + 1] - mu * grad[i, j]
                 #print('chi3:',chi[i, j+1])
             if d == 2:
-                print(i, j - 1, "-----", "i , j - 1")
+                #print(i, j - 1, "-----", "i , j - 1")
                 chi[i, j - 1] = chi[i, j - 1] - mu * grad[i,j]
                 #print('chi4:',chi[i, j-1])
     print(chi[100])
@@ -121,11 +123,11 @@ def compute_projected(chi, domain, V_obj):
     B = chi.copy()
     l = 0
     chi = processing.set2zero(chi, domain)
-
     V = np.sum(np.sum(chi)) / S
-    debut = -np.max(chi)
-    fin = np.max(chi)
+    debut = -np.max(np.abs(chi))
+    fin = np.max(np.abs(chi))
     ecart = fin - debut
+    
     # We use dichotomy to find a constant such that chi^{n+1}=max(0,min(chi^{n}+l,1)) is an element of the admissible space
     while ecart > 10 ** -4:
         # calcul du milieu 
@@ -140,7 +142,8 @@ def compute_projected(chi, domain, V_obj):
         else:
             debut = l
         ecart = fin - debut
-        # print('le volume est', V, 'le volume objectif est', V_obj)
+        #print("écart", ecart)
+        #print('le volume est', V, 'le volume objectif est', V_obj)
 
     return chi
 
@@ -158,11 +161,10 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         mu: float, it is the initial step of the gradient's descent;
         V_obj: float, it characterizes the volume constraint on the density chi.
     """
-
     k = 0
     (M, N) = np.shape(domain_omega)
-    numb_iter = 5
-    energy = np.zeros((numb_iter+1, 1), dtype=np.float64)
+    numb_iter = 5 
+    energy = np.zeros((numb_iter, 1), dtype=np.float64)
     while k < numb_iter and mu > 10**(-5):
 
         print('1. computing solution of Helmholtz problem, i.e., u')
@@ -177,6 +179,7 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         Jprim=compute_J_prim(Alpha, u, p)
         print('4. computing parametric gradient')
         ene=J
+        
         while ene >= energy[k] and mu > 10 ** -5:
             grad = Jprim
 
@@ -190,19 +193,22 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
             u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             
             print('    d. computing objective function, i.e., energy (E)')
-            ene = your_compute_objective_function(u)-1
-            bool_a=True
+
+            ene = your_compute_objective_function(u)
+            bool_a=ene<J
             if bool_a:
                 # The step is increased if the energy decreased
                 mu = mu * 1.1
             else:
                 # The step is decreased is the energy increased
                 mu = mu / 2
+
+        alpha_rob = Alpha*chi
         k += 1
 
     print('end. computing solution of Helmholtz problem, i.e., u')
     grad=0
-
+    
     return chi, energy, u, grad
 
 
@@ -238,7 +244,7 @@ if __name__ == '__main__':
     # -- set parameters of the geometry
     N = 100  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
-    level = 0 # level of the fractal
+    level = 1 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
@@ -278,6 +284,7 @@ if __name__ == '__main__':
     # -- define material density matrix
     chi = preprocessing._set_chi(M, N, x, y)
     chi = preprocessing.set2zero(chi, domain_omega)
+    
 
     # -- define absorbing material
     import compute_alpha
@@ -313,7 +320,6 @@ if __name__ == '__main__':
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj)
     # --- en of optimization
-
     chin = chi.copy()
     un = u.copy()
 
