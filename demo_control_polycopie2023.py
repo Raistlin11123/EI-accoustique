@@ -19,7 +19,7 @@ def compute_J_prim(alpha, u, p) :
     res=np.zeros((M,N))
     for i in range(M) :
         for j in range(N) :
-            res[i,j]=np.real(-alpha[i,j]*u[i,j]*p[i,j])
+            res[i,j]=np.real(-alpha*u[i,j]*p[i,j])
     return res
 
 
@@ -76,15 +76,20 @@ def compute_gradient_descent(chi, grad, domain, mu):
                 print(i+1,j, "-----", "i+1,j")
 
                 chi[i + 1, j] = chi[i + 1, j] - mu * grad[i, j]
+                #print('chi1:',chi[i + 1, j])
             if b == 2:
                 print(i - 1, j, "-----", "i - 1, j")
                 chi[i - 1, j] = chi[i - 1, j] - mu * grad[i, j]
+                #print('chi2:',chi[i - 1, j])
             if c == 2:
                 print(i, j + 1, "-----", "i , j + 1")
                 chi[i, j + 1] = chi[i, j + 1] - mu * grad[i, j]
+                #print('chi3:',chi[i, j+1])
             if d == 2:
                 print(i, j - 1, "-----", "i , j - 1")
                 chi[i, j - 1] = chi[i, j - 1] - mu * grad[i,j]
+                #print('chi4:',chi[i, j-1])
+    print(chi[100])
     return chi
 
 
@@ -144,7 +149,8 @@ def compute_projected(chi, domain, V_obj):
 def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
-    #omega/wavelenght attention
+    #omega!=wavelenght attention
+    #bizarre qu'on se serve pas de Alpha, V_obj
     """This function return the optimized density.
 
     Parameter:
@@ -166,7 +172,7 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
         print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u)
         energy[k]=J
-        Jprim=compute_J_prim(alpha_rob, u, p)
+        Jprim=compute_J_prim(Alpha, u, p)
         print('4. computing parametric gradient')
         ene=J
         while ene >= energy[k] and mu > 10 ** -5:
@@ -220,15 +226,7 @@ def your_compute_objective_function(u):
 
     return energy
 
-def compute_gradient_descent(p_k,q_k,chi_k,J_k,Jp_k,mu,eps):
-    l = 0 
-    #chi_k1 = 
-        
-    pass
 
-def P_l(chi):
-    np.maximum(np.zeros_like(chi),np.minimum)
- 
 
 if __name__ == '__main__':
 
@@ -246,9 +244,9 @@ if __name__ == '__main__':
     kx = -1.0
     ky = -1.0
     wavenumber = np.sqrt(kx**2 + ky**2)  # wavenumber
-
-    # wavenumber = 10.0
-
+    omega=10000
+    
+    g = lambda y,omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
 
     # ----------------------------------------------------------------------
     # -- Do not modify this cell, these are the values that you will be assessed against.
@@ -269,7 +267,7 @@ if __name__ == '__main__':
     # -- define boundary conditions
     # planar wave defined on top
     f_dir[:, :] = 0.0
-    f_dir[0, 0:N] = 1.0
+    f_dir[0, 0:N] = g(0, omega)
     '''
     faut que ce soit égal à g sur Gamma_dir
     '''
@@ -278,7 +276,7 @@ if __name__ == '__main__':
     #f_dir[0, int(N/2)] = 10.0
 
     # -- initialize
-    alpha_rob[:, :] = - wavenumber * 1j
+    # alpha_rob[:, :] = - wavenumber * 1j
 
     # -- define material density matrix
     chi = preprocessing._set_chi(M, N, x, y)
@@ -288,11 +286,7 @@ if __name__ == '__main__':
     # Alpha = 10.0 - 10.0 * 1j
     # -- this is the function you have written during your project
     import compute_alpha
-    # Alpha = compute_alpha.solve_alpha(...)
-    '''
-    à modifier également
-    '''
-    Alpha=1+1j
+    Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
     alpha_rob = Alpha * chi
 
     # -- set parameters for optimization
@@ -316,8 +310,6 @@ if __name__ == '__main__':
     chi0 = chi.copy()
     u0 = u.copy()
 
-    print("shape chi0:",chi0.shape)
-    print("shape u0:",np.real(u0[0:N]))
     # ----------------------------------------------------------------------
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
@@ -333,8 +325,6 @@ if __name__ == '__main__':
     chin = chi.copy()
     un = u.copy()
 
-    print("shape chin:",chin.shape)
-    print("shape ub:",un.shape)
 
     # -- plot chi, u, and energy
     postprocessing._plot_uncontroled_solution(u0, chi0)
