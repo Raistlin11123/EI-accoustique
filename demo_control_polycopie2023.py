@@ -145,7 +145,6 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
     #omega!=wavelenght attention
-    #bizarre qu'on se serve pas de Alpha, V_obj
     """This function return the optimized density.
 
     Parameter:
@@ -160,18 +159,23 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
     numb_iter = 5
     energy = np.zeros((numb_iter+1, 1), dtype=np.float64)
     while k < numb_iter and mu > 10**(-5):
+
         print('1. computing solution of Helmholtz problem, i.e., u')
         u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+
         print('2. computing solution of adjoint problem, i.e., p')
         p=processing.solve_helmholtz(domain_omega, spacestep, omega, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+
         print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u)
         energy[k]=J
         Jprim=compute_J_prim(alpha_rob, u, p)
+
         print('4. computing parametric gradient')
         ene=J
         while ene >= energy[k] and mu > 10 ** -5:
             grad = Jprim
+
             print('    a. computing gradient descent')
             chi = compute_gradient_descent(chi, grad, domain_omega, mu) #chi_k+1 sans projection (l=0)
 
@@ -181,7 +185,6 @@ def your_optimization_procedure(domain_omega, spacestep, omega, f, f_dir, f_neu,
             print('    c. computing solution of Helmholtz problem, i.e., u')
             u=processing.solve_helmholtz(domain_omega, spacestep, omega, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             
-
             print('    d. computing objective function, i.e., energy (E)')
             ene = your_compute_objective_function(u)-1
             bool_a=True
@@ -252,8 +255,7 @@ if __name__ == '__main__':
 
     # -- set geometry of domain
     domain_omega, x, y, _, _ = preprocessing._set_geometry_of_domain(M, N, level)
-    #print("domain_omega",domain_omega)
-
+    
     # ----------------------------------------------------------------------
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
@@ -261,23 +263,16 @@ if __name__ == '__main__':
     # planar wave defined on top
     f_dir[:, :] = 0.0
     f_dir[0, 0:N] = g(0, omega)
-    '''
-    faut que ce soit égal à g sur Gamma_dir
-    '''
+
     # spherical wave defined on top
     #f_dir[:, :] = 0.0
     #f_dir[0, int(N/2)] = 10.0
-
-    # -- initialize
-    # alpha_rob[:, :] = - wavenumber * 1j
 
     # -- define material density matrix
     chi = preprocessing._set_chi(M, N, x, y)
     chi = preprocessing.set2zero(chi, domain_omega)
 
     # -- define absorbing material
-    # Alpha = 10.0 - 10.0 * 1j
-    # -- this is the function you have written during your project
     import compute_alpha
     Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
     alpha_rob = Alpha * chi
@@ -309,7 +304,6 @@ if __name__ == '__main__':
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
     # -- compute optimization
-    # energy = np.zeros((100+1, 1), dtype=np.float64)
     chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj)
