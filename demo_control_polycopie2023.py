@@ -21,7 +21,7 @@ def compute_J_prim(alpha, u, p) :
 
     for i in range(M) :
         for j in range(N) :
-            res[i,j]=np.real(-alpha*u[i,j]*p[i,j])
+            res[i,j]=np.real(alpha*u[i,j]*p[i,j])
     return res
 
 
@@ -148,7 +148,7 @@ def compute_projected(chi, domain, V_obj):
         #print('le volume est', V, 'le volume objectif est', V_obj)
 
     # print(chi)
-    chi=chi_zero_ou_un (M, N, chi, S, V_obj, list_rob)
+    # chi=chi_zero_ou_un (M, N, chi, S, V_obj, list_rob)
 
     return chi
 
@@ -186,12 +186,9 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
         print(f"k={k}")
         #print('1. computing solution of Helmholtz problem, i.e., u')
         u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
-        print(u)
         #print('2. computing solution of adjoint problem, i.e., p')
         p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('3. computing objective function, i.e., energy')
-        print(domain_omega)
-        print(p)
         J=your_compute_objective_function(u) #il y a répétition de ces calculs. ils sont deja fait dans le while en dessous.
         energy[k]=J
         print("energie = ",J)
@@ -231,6 +228,15 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
                 
         k += 1
 
+    (M, N) = np.shape(domain_omega)
+    list_rob=[]
+    S = 0
+    for i in range(M):
+        for j in range(N):
+            if domain_omega[i, j] == _env.NODE_ROBIN:
+                S = S + 1
+                list_rob.append([(i,j),0])
+    chi=chi_zero_ou_un(M, N, chi, S, V_obj, list_rob)
     print('end. computing solution of Helmholtz problem, i.e., u')
 
     return chi, energy, u, grad
@@ -267,9 +273,9 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------
     # -- set parameters of the geometry
 
-    N = 20  # number of points along x-axis
+    N = 200  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
-    level = 1 # level of the fractal
+    level = 2 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
@@ -326,7 +332,7 @@ if __name__ == '__main__':
     V_0 = 1  # initial volume of the domain
     V_obj = np.sum(np.sum(chi)) / S  # constraint on the density
     '''remarquez que la densité est contraint par la fabrication _set_chi'''
-    mu = 5  # initial gradient step
+    mu = 1  # initial gradient step
     mu1 = 10**(-5)  # parameter of the volume functional
 
     # ----------------------------------------------------------------------
