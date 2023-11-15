@@ -259,14 +259,18 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------
     # -- set parameters of the geometry
 
-    N = 100  # number of points along x-axis
+    N = 50  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
     level = 0 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
-    kx = 5*(-1.0)
-    ky = 5*(-1.0)
+    #kx=ky= (sqrt(2)pi/340)*f
+    f= np.linspace(1500,3500,10)
+    kx = -((np.sqrt(2)*np.pi)/340)*f
+    ky = kx
+    #kx = 5*(-1.0)
+    #ky = 5*(-1.0)
     wavenumber = np.sqrt(kx**2 + ky**2)  # wavenumber
     omega= 340*wavenumber
     
