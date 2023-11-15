@@ -12,7 +12,7 @@ import preprocessing
 import processing
 import postprocessing
 #import solutions
-# np.set_printoptions(threshold=np.inf)
+np.set_printoptions(threshold=np.inf)
 
 def compute_J_prim(alpha, u, p) :
     #alpha complexe
@@ -123,7 +123,7 @@ def compute_projected(chi, domain, V_obj):
 
     B = chi.copy()
     l = 0
-    chi = processing.set2zero(chi, domain)
+    chi = processing.set2zero(chi, domain) #normalement pas utile vu comment on fait la descente de gradient
     V = np.sum(np.sum(chi)) / S
     debut = -np.max(np.abs(chi))
     fin = np.max(np.abs(chi))
@@ -147,6 +147,7 @@ def compute_projected(chi, domain, V_obj):
         #print("écart", ecart)
         #print('le volume est', V, 'le volume objectif est', V_obj)
 
+    # print(chi)
     chi=chi_zero_ou_un (M, N, chi, S, V_obj, list_rob)
 
     return chi
@@ -174,32 +175,39 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
     """
     k = 0
     (M, N) = np.shape(domain_omega)
-    numb_iter = 5
+    numb_iter = 20
     energy = np.zeros((numb_iter, 1), dtype=np.float64)
     is_good = True
-    while k < numb_iter:
+    bool_b=False
+
+    while k < numb_iter and not bool_b:
         if not is_good:
             mu *= 2
         print(f"k={k}")
         #print('1. computing solution of Helmholtz problem, i.e., u')
         u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        print(u)
         #print('2. computing solution of adjoint problem, i.e., p')
         p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('3. computing objective function, i.e., energy')
-        J=your_compute_objective_function(u)
+        print(domain_omega)
+        print(p)
+        J=your_compute_objective_function(u) #il y a répétition de ces calculs. ils sont deja fait dans le while en dessous.
         energy[k]=J
         print("energie = ",J)
         Jprim=compute_J_prim(Alpha, u, p)
         #print('4. computing parametric gradient')
-        ene=J
+        ene=np.inf
 
         print('-------------', k, '----------------')
         
-        while ene >= energy[k] and mu > 10 ** -5:
+        while ene > energy[k] and mu > 10 ** -5:
             grad = Jprim
             #print('    a. computing gradient descent')
+            # print(grad)
+            # print(chi)
             chi = compute_gradient_descent(chi, grad, domain_omega, mu) #chi_k+1 sans projection (l=0)
-
+            # print(chi)
             #print('    b. computing projected gradient')
             chi = compute_projected(chi, domain_omega, V_obj)
             alpha_rob = Alpha*chi
@@ -218,6 +226,8 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
                 # The step is decreased is the energy increased
                 mu = mu / 2
                 is_good = False
+            if ene==energy[k] :
+                bool_b=True
                 
         k += 1
 
@@ -257,7 +267,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------
     # -- set parameters of the geometry
 
-    N = 100  # number of points along x-axis
+    N = 20  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
     level = 1 # level of the fractal
     spacestep = 1.0 / N  # mesh size
@@ -301,8 +311,8 @@ if __name__ == '__main__':
 
     # -- define absorbing material
     import compute_alpha
-    #Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
-    Alpha = 6+7j
+    # Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
+    Alpha = 7+7j
     alpha_rob = Alpha * chi
     
 
@@ -315,6 +325,7 @@ if __name__ == '__main__':
 
     V_0 = 1  # initial volume of the domain
     V_obj = np.sum(np.sum(chi)) / S  # constraint on the density
+    '''remarquez que la densité est contraint par la fabrication _set_chi'''
     mu = 5  # initial gradient step
     mu1 = 10**(-5)  # parameter of the volume functional
 
