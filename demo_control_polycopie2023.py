@@ -12,9 +12,9 @@ import preprocessing
 import processing
 import postprocessing
 #import solutions
-# np.set_printoptions(threshold=np.inf)
+np.set_printoptions(threshold=np.inf)
 
-def compute_J_prim(alpha, u, p) :
+def compute_J_prim(alpha, u, p):
     #alpha complexe
     M,N=np.shape(u)
     res=np.zeros((M,N))
@@ -147,21 +147,21 @@ def compute_projected(chi, domain, V_obj):
         #print("écart", ecart)
         #print('le volume est', V, 'le volume objectif est', V_obj)
 
-    chi=chi_zero_ou_un (M, N, chi, S, V_obj, list_rob)
+#    chi=chi_zero_ou_un (M, N, chi, S, V_obj, list_rob)
 
     return chi
 
-def chi_zero_ou_un (M, N, chi, S, V_obj, list_rob) :
-    for el in list_rob :
-        el[1]=chi[el[0]]
-    list_rob=sorted(list_rob, key=lambda couple : couple[1], reverse=True)
-    chiprim = np.zeros((M,N))
-    for i in range(int(S*V_obj)) :
-        chiprim[list_rob[i][0]]=1
-    return chiprim
+#def chi_zero_ou_un (M, N, chi, S, V_obj, list_rob) :
+#    for el in list_rob :
+#        el[1]=chi[el[0]]
+#    list_rob=sorted(list_rob, key=lambda couple : couple[1], reverse=True)
+#    chiprim = np.zeros((M,N))
+#    for i in range(int(S*V_obj)) :
+#        chiprim[list_rob[i][0]]=1
+#    return chiprim
 
 
-def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
+
 def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
                            Alpha, mu, chi, V_obj):
@@ -185,10 +185,8 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
         print(f"k={k}")
         #print('1. computing solution of Helmholtz problem, i.e., u')
         u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
-        u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('2. computing solution of adjoint problem, i.e., p')
-        p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
-        p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros_like(domain_omega), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, np.conjugate(-2*u), np.zeros((M,N)), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
         #print('3. computing objective function, i.e., energy')
         J=your_compute_objective_function(u,spacestep)
         energy[k]=J
@@ -197,8 +195,10 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
         #print('4. computing parametric gradient')
         ene=J
         grad = -Jprim
+        #print("Jprim=",Jprim)
+        #print("grad=",grad)
+        is_good = True
         while ene >= energy[k] and mu > 10 ** -5:
-            
             #print('    a. computing gradient descent')
             chi = compute_gradient_descent(chi, grad, domain_omega, mu) #chi_k+1 sans projection (l=0)
 
@@ -206,7 +206,6 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
             chi = compute_projected(chi, domain_omega, V_obj)
             alpha_rob = Alpha*chi
             #print('    c. computing solution of Helmholtz problem, i.e., u')
-            u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
             
 
@@ -260,9 +259,9 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------
     # -- set parameters of the geometry
 
-    N = 50  # number of points along x-axis
+    N = 100  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
-    level = 2 # level of the fractal
+    level = 0 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
@@ -294,6 +293,7 @@ if __name__ == '__main__':
     f_dir[:, :] = 0.0
     for j in range(N) :
         f_dir[0, j] = g(spacestep*(j-N/2), omega)
+    #f_dir[0, 0:N] = g(0, omega)
 
     # spherical wave defined on top
     #f_dir[:, :] = 0.0
@@ -306,8 +306,8 @@ if __name__ == '__main__':
 
     # -- define absorbing material
     import compute_alpha
-    Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
-    #Alpha = 4.259503502537576+0.17454478468463255j
+    #Alpha = compute_alpha.compute_alpha(N*spacestep, omega, g)
+    Alpha = (1-1j)
     alpha_rob = Alpha * chi
     
 
@@ -320,7 +320,7 @@ if __name__ == '__main__':
 
     V_0 = 1  # initial volume of the domain
     V_obj = np.sum(np.sum(chi)) / S  # constraint on the density
-    mu = 10 ** -2  # initial gradient step
+    mu = 10 ** -1  # initial gradient step
     mu1 = 10**(-5)  # parameter of the volume functional
 
     # ----------------------------------------------------------------------
