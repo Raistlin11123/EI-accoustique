@@ -231,6 +231,92 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
 
     return chi, energy, u, grad
 
+def your_optimization_procedure_multi(domain_omega, spacestep, wavenumber, f, f_dirs, f_neu, f_rob,
+                           beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
+                           Alpha, mu, chi, V_obj):
+    """This function return the optimized density.
+
+    Parameter:
+        cf solvehelmholtz's remarks
+        Alpha: complex, it corresponds to the absorbtion coefficient;
+        mu: float, it is the initial step of the gradient's descent;
+        V_obj: float, it characterizes the volume constraint on the density chi.
+    """
+    k = 0
+    (M, N) = np.shape(domain_omega)
+    numb_iter = 100
+    energy = np.zeros((numb_iter, 1), dtype=np.float64)
+    is_good = True
+    while k < numb_iter:
+        print("mu entrée de boucle:", mu)
+        if not is_good:
+            mu *= 2
+        print(f"k={k}")
+        us = []
+        ps = []
+        Js = []
+        Jprims = []
+        #print('1. computing solution of Helmholtz problem, i.e., u')
+        for i in range(wavenumber.shape[0]):
+            u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber[i], f, f_dirs[i], f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+            us.append(u)
+        #print('2. computing solution of adjoint problem, i.e., p')
+        for i in range(wavenumber.shape[0]):
+            p=processing.solve_helmholtz(domain_omega, spacestep, wavenumber[i], np.conjugate(-2*u), np.zeros((M,N)), f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+            ps.append(p)
+        #print('3. computing objective function, i.e., energy')
+        for i in range(wavenumber.shape[0]):
+            J=your_compute_objective_function(us[i],spacestep)
+            Js.append(J)
+        energy[k]=sum(Js)
+        print("energie = ",sum(Js))
+        for i in range(wavenumber.shape[0]):
+            Jprim = compute_J_prim(Alpha, us[i], ps[i])
+            Jprims.append(Jprim) 
+        #print('4. computing parametric gradient')
+        ene = sum(Js)
+        grad = -sum(Jprims)
+        #print("Jprim=",Jprim)
+        #print("grad=",grad)
+        is_good = True
+        while ene >= energy[k] and mu > 10 ** -5:
+            #print('    a. computing gradient descent')
+            chi = compute_gradient_descent(chi, grad, domain_omega, mu) #chi_k+1 sans projection (l=0)
+
+            #print('    b. computing projected gradient')
+            chi = compute_projected(chi, domain_omega, V_obj)
+            alpha_rob = Alpha*chi
+            #print('    c. computing solution of Helmholtz problem, i.e., u')
+            us = []
+            for i in range(wavenumber.shape[0]):
+                u=processing.solve_helmholtz(domain_omega, spacestep, wavenumber[i], f, f_dirs[i], f_neu, f_rob, beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+                us.append(u)
+
+            #print('    d. computing objective function, i.e., energy (E)')
+            enes = []
+            for i in range(wavenumber.shape[0]):
+                en = your_compute_objective_function(u[i],spacestep)
+                enes.append(en)
+            ene = sum(enes)
+            bool_a=ene<J
+            if bool_a:
+                # The step is increased if the energy decreased
+                mu = mu * 1.1
+                print("mu bonne éné:", mu)
+                print("éné:",ene)
+                is_good = True
+            else:
+                # The step is decreased is the energy increased
+                mu = mu / 2
+                print("mu mauvaise éné:", mu)
+                print("éné:",ene)
+                is_good = False
+                
+        k += 1
+
+    print('end. computing solution of Helmholtz problem, i.e., u')
+
+    return chi, energy, sum(us), grad
 
 def your_compute_objective_function(u,spacestep):
     """
@@ -259,23 +345,24 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------
     # -- set parameters of the geometry
 
-    N = 50  # number of points along x-axis
+    N = 25  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
     level = 0 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
     #kx=ky= (sqrt(2)pi/340)*f
-    f= np.linspace(1500,3500,10)
-    kx = -((np.sqrt(2)*np.pi)/340)*f
+    freq= np.linspace(1500,3500,50)
+    kx = -((np.sqrt(2)*np.pi)/340)*freq
     ky = kx
     #kx = 5*(-1.0)
     #ky = 5*(-1.0)
     wavenumber = np.sqrt(kx**2 + ky**2)  # wavenumber
     omega= 340*wavenumber
+    print("omega=", omega.shape)
+    min_energies = np.zeros(freq.shape[0])
+
     
-    #g = lambda y,omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
-    g = lambda x, omega : np.exp(complex(0,1)*(kx*x+ky*0))
 
     # ----------------------------------------------------------------------
     # -- Do not modify this cell, these are the values that you will be assessed against.
@@ -292,16 +379,6 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------
     # -- Fell free to modify the function call in this cell.
     # ----------------------------------------------------------------------
-    # -- define boundary conditions
-    # planar wave defined on top
-    f_dir[:, :] = 0.0
-    for j in range(N) :
-        f_dir[0, j] = g(spacestep*(j-N/2), omega)
-    #f_dir[0, 0:N] = g(0, omega)
-
-    # spherical wave defined on top
-    #f_dir[:, :] = 0.0
-    #f_dir[0, int(N/2)] = 10.0
 
     # -- define material density matrix
     chi = preprocessing._set_chi(M, N, x, y)
@@ -326,36 +403,86 @@ if __name__ == '__main__':
     V_obj = np.sum(np.sum(chi)) / S  # constraint on the density
     mu = 10 ** -1  # initial gradient step
     mu1 = 10**(-5)  # parameter of the volume functional
+    chis = []
+    us = []
+    f_dirs = []
 
-    # ----------------------------------------------------------------------
-    # -- Do not modify this cell, these are the values that you will be assessed against.
-    # ----------------------------------------------------------------------
-    # -- compute finite difference solution
-    u = processing.solve_helmholtz(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
-                        beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
-    chi0 = chi.copy()
-    u0 = u.copy()
+    for i in range(freq.shape[0]):
+        print(i)
+        #g = lambda y,omega : 0.1*np.exp(-(y**2)/8)*np.cos(omega*1)
+        g = lambda x, omega : np.exp(complex(0,1)*(kx[i]*x+ky[i]*0))
 
-    # ----------------------------------------------------------------------
-    # -- Fell free to modify the function call in this cell.
-    # ----------------------------------------------------------------------
-    # -- compute optimization
+        # -- define boundary conditions
+        # planar wave defined on top
+        f_dir[:, :] = 0.0
+        for j in range(N) :
+            f_dir[0, j] = g(spacestep*(j-N/2), omega[i])
+            f_diri = f_dir.copy()
+            f_dirs.append(f_diri)
+        #f_dir[0, 0:N] = g(0, omega)
 
-    # energy = np.zeros((100+1, 1), dtype=np.float64)
-    chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f_neu, f_rob,
-                           beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
-                           Alpha, mu, chi, V_obj)
-
-    # --- en of optimization
-    chin = chi.copy()
-    un = u.copy()
+        # spherical wave defined on top
+        #f_dir[:, :] = 0.0
+        #f_dir[0, int(N/2)] = 10.0
 
 
+
+        # ----------------------------------------------------------------------
+        # -- Do not modify this cell, these are the values that you will be assessed against.
+        # ----------------------------------------------------------------------
+        # -- compute finite difference solution
+        u = processing.solve_helmholtz(domain_omega, spacestep, wavenumber[i], f, f_dir, f_neu, f_rob,
+                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+        chi0 = chi.copy()
+        u0 = u.copy()
+
+        # ----------------------------------------------------------------------
+        # -- Fell free to modify the function call in this cell.
+        # ----------------------------------------------------------------------
+        # -- compute optimization
+
+        # energy = np.zeros((100+1, 1), dtype=np.float64)
+        chi, energy, u, grad = your_optimization_procedure(domain_omega, spacestep, wavenumber[i], f, f_dir, f_neu, f_rob,
+                               beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob,
+                               Alpha, mu, chi, V_obj)
+
+        # --- en of optimization
+        chin = chi.copy()
+        un = u.copy()
+        chis.append(chin)
+        us.append(un)
+
+        min_energies[i] = energy[-1]
+
+
+    min_chi_index = 0
+    min_sum_energy = np.inf
+    for i in range(wavenumber.shape[0]):
+        energy = 0
+        alpha_rob = Alpha*chis[i]
+        for j in range(wavenumber.shape[0]):
+            u = processing.solve_helmholtz(domain_omega, spacestep, wavenumber[j], f, f_dirs[j], f_neu, f_rob,
+                            beta_pde, alpha_pde, alpha_dir, beta_neu, beta_rob, alpha_rob)
+            energy += your_compute_objective_function(u,spacestep)
+        if energy < min_sum_energy:
+            min_chi_index = i
+            min_sum_energy = energy
+
+            
+    
     # -- plot chi, u, and energy
-    postprocessing._plot_uncontroled_solution(u0, chi0)
-    postprocessing._plot_controled_solution(un, chin)
-    err = un - u0
-    postprocessing._plot_error(err)
-    postprocessing._plot_energy_history(energy)
+    #postprocessing._plot_uncontroled_solution(u0, chi0)
+    #postprocessing._plot_controled_solution(un, chin)
+    #err = un - u0
+    #postprocessing._plot_error(err)
+    #postprocessing._plot_energy_history(energy)
+
+    postprocessing._plot_controled_solution(us[min_chi_index], chis[min_chi_index])
+
+    plt.scatter(freq, min_energies)
+    plt.xlabel(r"fréquence $f$")
+    plt.ylabel("énergie minimale")
+    plt.title(r"énergie minimale de la solution réponse à une fréquence $f$")
+    plt.show()
 
     print('End.')
