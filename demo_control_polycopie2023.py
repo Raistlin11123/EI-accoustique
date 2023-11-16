@@ -151,14 +151,22 @@ def compute_projected(chi, domain, V_obj):
 
     return chi
 
-#def chi_zero_ou_un (M, N, chi, S, V_obj, list_rob) :
-#    for el in list_rob :
-#        el[1]=chi[el[0]]
-#    list_rob=sorted(list_rob, key=lambda couple : couple[1], reverse=True)
-#    chiprim = np.zeros((M,N))
-#    for i in range(int(S*V_obj)) :
-#        chiprim[list_rob[i][0]]=1
-#    return chiprim
+def chi_zero_ou_un (chi,domain, V_obj) :
+    (M, N) = np.shape(domain)
+    list_rob=[]
+    S = 0
+    for i in range(M):
+        for j in range(N):
+            if domain[i, j] == _env.NODE_ROBIN:
+                S = S + 1
+                list_rob.append([(i,j),0])
+    for el in list_rob :
+        el[1]=chi[el[0]]
+    list_rob=sorted(list_rob, key=lambda couple : couple[1], reverse=True)
+    chiprim = np.zeros((M,N))
+    for i in range(int(S*V_obj)) :
+        chiprim[list_rob[i][0]]=1
+    return chiprim
 
 
 
@@ -175,7 +183,7 @@ def your_optimization_procedure(domain_omega, spacestep, wavenumber, f, f_dir, f
     """
     k = 0
     (M, N) = np.shape(domain_omega)
-    numb_iter = 100
+    numb_iter = 75
     energy = np.zeros((numb_iter, 1), dtype=np.float64)
     is_good = True
     while k < numb_iter:
@@ -244,7 +252,7 @@ def your_optimization_procedure_multi(domain_omega, spacestep, wavenumber, f, f_
     """
     k = 0
     (M, N) = np.shape(domain_omega)
-    numb_iter = 50
+    numb_iter = 75
     energy = np.zeros((numb_iter, 1), dtype=np.float64)
     is_good = True
     while k < numb_iter:
@@ -345,7 +353,7 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------
     # -- set parameters of the geometry
 
-    N = 25  # number of points along x-axis
+    N = 40  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
     level = 0 # level of the fractal
     spacestep = 1.0 / N  # mesh size
@@ -477,7 +485,7 @@ if __name__ == '__main__':
     #postprocessing._plot_error(err)
     #postprocessing._plot_energy_history(energy)
 
-    postprocessing._plot_controled_solution(us[min_chi_index], chis[min_chi_index])
+    postprocessing._plot_controled_solution(us[min_chi_index], chi_zero_ou_un(chis[min_chi_index],domain_omega, V_obj))
 
     plt.scatter(freq, min_energies)
     plt.xlabel(r"fréquence $f$")

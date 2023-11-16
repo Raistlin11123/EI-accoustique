@@ -14,7 +14,7 @@ import postprocessing
 #import solutions
 np.set_printoptions(threshold=np.inf)
 
-from demo_control_polycopie2023 import your_optimization_procedure_multi
+from demo_control_polycopie2023 import your_optimization_procedure_multi, chi_zero_ou_un
 
 if __name__ == '__main__':
 
@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     N = 40  # number of points along x-axis
     M = 2 * N  # number of points along y-axis
-    level = 0 # level of the fractal
+    level = 1 # level of the fractal
     spacestep = 1.0 / N  # mesh size
 
     # -- set parameters of the partial differential equation
@@ -133,7 +133,7 @@ if __name__ == '__main__':
 
     # -- plot chi, u, and energy
     postprocessing._plot_uncontroled_solution(sum(u0s), chi0)
-    postprocessing._plot_controled_solution(sum_un, chin)
+    postprocessing._plot_controled_solution(sum_un, chi_zero_ou_un(chin,domain_omega,V_obj))
     err = sum_un - u0
     postprocessing._plot_error(err)
     postprocessing._plot_energy_history(energy)
