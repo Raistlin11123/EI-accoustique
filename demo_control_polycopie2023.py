@@ -295,10 +295,10 @@ def your_optimization_procedure_multi(domain_omega, spacestep, wavenumber, f, f_
             #print('    d. computing objective function, i.e., energy (E)')
             enes = []
             for i in range(wavenumber.shape[0]):
-                en = your_compute_objective_function(u[i],spacestep)
+                en = your_compute_objective_function(us[i],spacestep)
                 enes.append(en)
             ene = sum(enes)
-            bool_a=ene<J
+            bool_a=ene<sum(Js)
             if bool_a:
                 # The step is increased if the energy decreased
                 mu = mu * 1.1
