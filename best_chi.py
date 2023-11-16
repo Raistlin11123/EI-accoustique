@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     V_0 = 1  # initial volume of the domain
     V_obj = np.sum(np.sum(chi)) / S  # constraint on the density
-    mu = 10 ** -2  # initial gradient step
+    mu = 10 ** -3  # initial gradient step
     mu1 = 10**(-5)  # parameter of the volume functional
 
     f_dirs = []

@@ -244,7 +244,7 @@ def your_optimization_procedure_multi(domain_omega, spacestep, wavenumber, f, f_
     """
     k = 0
     (M, N) = np.shape(domain_omega)
-    numb_iter = 100
+    numb_iter = 50
     energy = np.zeros((numb_iter, 1), dtype=np.float64)
     is_good = True
     while k < numb_iter:
